@@ -7,4 +7,3 @@ pydub
 librosa
 whisper
 openai-whisper
-gunicorn
