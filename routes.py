@@ -151,12 +151,12 @@ def predict_bipolar_stage(data):
         activity = data['activity']
 
         # Validate inputs
-        valid_emotions = ['Happy', 'Sad', 'Surprise', 'Neutral', 'Disgust', 'Angry', 'Fear']
-        valid_activities = ['Low', 'Average', 'High']
-        if video_emotion not in valid_emotions or text_emotion not in valid_emotions or audio_emotion not in valid_emotions:
-            return jsonify({'error': 'Invalid emotion value'}), 400
-        if activity not in valid_activities:
-            return jsonify({'error': 'Invalid activity value'}), 400
+        # valid_emotions = ['Happy', 'Sad', 'Surprise', 'Neutral', 'Disgust', 'Angry', 'Fear']
+        # valid_activities = ['Low', 'Average', 'High']
+        # if video_emotion not in valid_emotions or text_emotion not in valid_emotions or audio_emotion not in valid_emotions:
+        #     return jsonify({'error': 'Invalid emotion value'}), 400
+        # if activity not in valid_activities:
+        #     return jsonify({'error': 'Invalid activity value'}), 400
 
         # Preprocess inputs
         new_data = preprocess_bipolar_inputs(video_emotion, text_emotion, audio_emotion, activity)
