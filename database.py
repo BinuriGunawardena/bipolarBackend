@@ -93,14 +93,14 @@ def store_prediction(user_id, collection_name, prediction_type, input_data, emot
         user_ref = db.collection('users').document(user_id)
         emotions = {}
 
-        # Define subcollections and fallback
+        # Subcollections for emotion types
         collections = {
             'text_emotions': 'text_emotion',
             'audio_emotions': 'audio_emotion',
-            'Video_emotions': 'video_emotion'
+            'Video_emotions': 'video_emotion'  # Case-sensitive match to your DB
         }
 
-        # Get the latest emotion for each type, fallback to "Neutral"
+        # Fetch latest emotions, default to "Neutral" if not found
         for col, key in collections.items():
             docs = user_ref.collection(col).order_by('timestamp', direction=firestore.Query.DESCENDING).limit(1).stream()
             for doc in docs:
@@ -108,14 +108,14 @@ def store_prediction(user_id, collection_name, prediction_type, input_data, emot
             if key not in emotions:
                 emotions[key] = "Neutral"
 
-        # Get latest steps from activityData → convert to activity level
+        # Fetch latest step count from activityData and convert to activity level
         activity_docs = user_ref.collection('activityData').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(1).stream()
         steps = None
         for doc in activity_docs:
             steps = doc.to_dict().get('steps')
             break
 
-        # Convert steps to activity level (default = Low)
+        # Convert steps → activity level
         if steps is not None:
             if steps < 10:
                 activity_level = "Low"
@@ -126,7 +126,7 @@ def store_prediction(user_id, collection_name, prediction_type, input_data, emot
         else:
             activity_level = "Low"
 
-        # Prepare and send the payload
+        # Build payload for bipolar stage prediction
         payload = {
             'userID': user_id,
             'text_emotion': emotions['text_emotion'],
@@ -143,10 +143,12 @@ def store_prediction(user_id, collection_name, prediction_type, input_data, emot
             timeout=10
         )
 
+        print("Response:", response.status_code, response.text)
+
         if response.status_code == 200:
             print("[✓] Bipolar stage predicted:", response.json())
         else:
-            print(f"[×] Prediction API error: {response.status_code} - {response.text}")
+            print(f"[×] Prediction API failed: {response.status_code} - {response.text}")
 
     except requests.exceptions.RequestException as req_err:
         print(f"[!] Network error calling bipolar API: {req_err}")
