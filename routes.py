@@ -12,20 +12,7 @@ import uuid
 import whisper
 import librosa
 from pydub import AudioSegment
-import firebase_admin
-from firebase_admin import credentials, firestore
 from apscheduler.schedulers.background import BackgroundScheduler
-
-service_account_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT")
-
-if service_account_json:
-    cred_dict = json.loads(service_account_json)
-    cred = credentials.Certificate(cred_dict)
-    firebase_admin.initialize_app(cred)
-else:
-    raise Exception("GOOGLE_SERVICE_ACCOUNT environment variable is missing.")
-
-db = firestore.client()
 
 # Load models
 text_model = load_text_model()
@@ -188,39 +175,3 @@ def predict_bipolar_stage(data):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-def fetch_latest_emotions(user_id):
-    """Fetch latest emotions from Firestore for a given user."""
-    collections = ['Video_emotions', 'Audio_emotions', 'Text_emotions']
-    emotions = {}
-
-    for col in collections:
-        docs = db.collection('users').document(user_id).collection(col) \
-            .order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1).stream()
-
-        for doc in docs:
-            emotions[col.lower()] = doc.to_dict().get("emotion", "Unknown")
-
-    return {
-        'video_emotion': emotions.get('video_emotions', 'Unknown'),
-        'audio_emotion': emotions.get('audio_emotions', 'Unknown'),
-        'text_emotion': emotions.get('text_emotions', 'Unknown'),
-    }
-
-def scheduled_bipolar_prediction():
-    """Trigger bipolar stage prediction for all users every 5 minutes."""
-    try:
-        users = db.collection('users').stream()
-
-        for user_doc in users:
-            user_id = user_doc.id
-            emotions = fetch_latest_emotions(user_id)
-            emotions['activity'] = 'Low'  # default or fetched dynamically
-            emotions['userID'] = user_id
-
-            predict_bipolar_stage(emotions)
-
-    except Exception as e:
-        print("Scheduled prediction error:", str(e))
-
-
