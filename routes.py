@@ -12,7 +12,20 @@ import uuid
 import whisper
 import librosa
 from pydub import AudioSegment
+import firebase_admin
+from firebase_admin import credentials, firestore
 from apscheduler.schedulers.background import BackgroundScheduler
+
+service_account_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT")
+
+if service_account_json:
+    cred_dict = json.loads(service_account_json)
+    cred = credentials.Certificate(cred_dict)
+    firebase_admin.initialize_app(cred)
+else:
+    raise Exception("GOOGLE_SERVICE_ACCOUNT environment variable is missing.")
+
+db = firestore.client()
 
 # Load models
 text_model = load_text_model()
@@ -210,7 +223,4 @@ def scheduled_bipolar_prediction():
     except Exception as e:
         print("Scheduled prediction error:", str(e))
 
-# Schedule it every 5 minutes
-scheduler = BackgroundScheduler()
-scheduler.add_job(scheduled_bipolar_prediction, 'interval', minutes=1)
-scheduler.start()
+
